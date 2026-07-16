@@ -27,6 +27,13 @@
 - [ ] Phase 2: 拡張(分岐拡充、フリーフライト、音声ガイド)
 - [ ] Phase 3: 発展(WebXR/VR、多言語、フォトモード)
 
+## デモ(GitHub Pages)
+
+**https://kf-5892.github.io/spacetest/**
+
+pushごとにGitHub Actionsが自動でビルドして `gh-pages` ブランチへデプロイします
+(`.github/workflows/deploy-pages.yml`)。初回のみPagesの有効化に数分かかることがあります。
+
 ## 動かし方(Phase 0 PoC)
 
 ```bash
