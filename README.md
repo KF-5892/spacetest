@@ -32,7 +32,12 @@
 **https://kf-5892.github.io/spacetest/**
 
 pushごとにGitHub Actionsが自動でビルドして `gh-pages` ブランチへデプロイします
-(`.github/workflows/deploy-pages.yml`)。初回のみPagesの有効化に数分かかることがあります。
+(`.github/workflows/deploy-pages.yml`)。
+
+> **初回のみ手動設定が必要**: リポジトリの **Settings → Pages → Build and deployment** で
+> Source: **Deploy from a branch**、Branch: **gh-pages** / **/(root)** を選んで Save。
+> (Pagesサイトの新規有効化はActionsの権限では行えないため、この1回だけ管理者操作が必要です)
+> 保存後1〜2分で上記URLに公開され、以降はpushのたびに自動更新されます。
 
 ## 動かし方(Phase 0 PoC)
 
