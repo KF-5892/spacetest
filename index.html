@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="コスモライナー — ブラウザで体験する約100秒の宇宙遊覧ツアー(Phase 0 PoC)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='%237fd4ff'/%3E%3Ccircle cx='38' cy='42' r='12' fill='%23dff2ff'/%3E%3C/svg%3E" />
+    <title>コスモライナー — 宇宙遊覧ツアー (PoC)</title>
+    <script type="module" crossorigin src="./assets/index-B2mlYFUq.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DcQCGR0M.css">
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+
+    <!-- コックピット(固定参照枠: NFR-30) -->
+    <div id="cockpit" aria-hidden="true">
+      <div class="vignette"></div>
+      <div class="arch"></div>
+      <div class="pillar left"></div>
+      <div class="pillar right"></div>
+      <div class="strut left"></div>
+      <div class="strut right"></div>
+      <div id="console">
+        <div class="cluster">
+          <div class="gauge-label">SPEED</div>
+          <div id="speed" class="readout">0.0</div>
+          <div id="speed-unit" class="gauge-sub">km/s</div>
+        </div>
+        <div class="cluster wide">
+          <div id="route">
+            <span class="node" id="route-earth">地球</span><span class="leg"></span><span
+              class="node" id="route-moon">月</span><span class="leg"></span><span
+              class="node" id="route-mars">火星</span>
+          </div>
+          <div id="progress"><div id="progress-fill"></div></div>
+          <div id="phase-console" class="gauge-sub">--</div>
+        </div>
+        <div class="cluster">
+          <div class="gauge-label">WARP</div>
+          <div id="warp-gauge"><div id="warp-fill"></div></div>
+          <div id="status" class="gauge-sub" data-mode="cruise">STANDBY</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="phase-label">--</div>
+    <div id="fps"></div>
+    <div id="hint">ドラッグ: 見回す ┆ ダブルクリック/C: 視点リセット ┆ Space: 一時停止 ┆ Q: 画質</div>
+    <div id="subtitle" class="hidden"></div>
+    <div id="pause-badge" class="hidden">PAUSE ─ 一時停止</div>
+    <div id="entry-glow"></div>
+    <div id="haze"></div>
+    <div id="fade"></div>
+    <div id="flash"></div>
+
+    <!-- 出発ロビー -->
+    <div id="start-screen" class="screen">
+      <div class="panel">
+        <div class="brand">COSMO LINER</div>
+        <div class="brand-jp">コスモライナー ─ 宇宙遊覧ツアー</div>
+        <div class="route-of-day">本日の航路: 地球 → 月 → 火星(約100秒)</div>
+        <button id="start-btn">搭乗する</button>
+        <label class="comfort"><input type="checkbox" id="comfort-check" /> 快適モード(揺れ・視野演出を抑える)</label>
+        <div class="footnote">Phase 0 技術検証ビルド ┆ PCブラウザ推奨 ┆ 音声はPhase 1で搭載予定</div>
+      </div>
+    </div>
+
+    <!-- 帰投ロビー -->
+    <div id="end-screen" class="screen hidden">
+      <div class="panel">
+        <div class="brand-jp">ツアー終了</div>
+        <p>本日は 地球─月─火星 ツアーへのご搭乗、<br />ありがとうございました。</p>
+        <button id="replay-btn">もう一度乗る</button>
+      </div>
+    </div>
+
+  </body>
+</html>
