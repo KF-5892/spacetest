@@ -263,6 +263,26 @@ html, body {
 }
 #pause-badge.hidden { display: none; }
 
+/* 大気圏突入の摩擦光(画面端のオレンジグロー) */
+#entry-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  background: radial-gradient(ellipse at 50% 55%, transparent 42%, rgba(255, 130, 40, 0.28) 74%, rgba(255, 170, 70, 0.62) 100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 大気圏の砂塵ヘイズ(ピークで画面を覆い、世界を差し替える) */
+#haze {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  background: linear-gradient(rgba(226, 178, 128, 0.98), rgba(206, 148, 96, 0.98));
+  opacity: 0;
+  pointer-events: none;
+}
+
 #fade {
   position: fixed;
   inset: 0;

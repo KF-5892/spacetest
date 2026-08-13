@@ -57,6 +57,8 @@ export class CameraRig {
   private fov = 62;
   private elapsed = 0;
   private readonly q = new THREE.Quaternion();
+  private readonly qSmooth = new THREE.Quaternion();
+  private hasSmooth = false;
   private readonly qOff = new THREE.Quaternion();
   private readonly m = new THREE.Matrix4();
   private readonly euler = new THREE.Euler();
@@ -77,6 +79,11 @@ export class CameraRig {
     this.recentering = true;
   }
 
+  // シーク直後などに呼び、注視スムージングを即時追従にリセットする
+  snapLook(): void {
+    this.hasSmooth = false;
+  }
+
   apply(pos: THREE.Vector3, target: THREE.Vector3, dt: number, p: RigParams): void {
     this.elapsed += dt;
 
@@ -91,9 +98,15 @@ export class CameraRig {
       }
     }
 
-    // 基本姿勢: レール上からターゲットを見る
+    // 基本姿勢: レール上からターゲットを見る(注視点の切替はスムージングで吸収)
     this.m.lookAt(pos, target, new THREE.Vector3(0, 1, 0));
     this.q.setFromRotationMatrix(this.m);
+    if (!this.hasSmooth) {
+      this.qSmooth.copy(this.q);
+      this.hasSmooth = true;
+    } else {
+      this.qSmooth.slerp(this.q, Math.min(1, dt * 3.5));
+    }
 
     // ユーザーの見回し + タイトル画面のドリフト
     let yaw = this.yawOffset;
@@ -104,7 +117,7 @@ export class CameraRig {
     }
     this.euler.set(pitch, yaw, Math.sin(this.elapsed * 0.23) * 0.012 * p.swayAmp, 'YXZ');
     this.qOff.setFromEuler(this.euler);
-    this.camera.quaternion.multiplyQuaternions(this.q, this.qOff);
+    this.camera.quaternion.multiplyQuaternions(this.qSmooth, this.qOff);
 
     // 位置: 微揺れ + 振動をカメラローカル軸に加算
     this.right.set(1, 0, 0).applyQuaternion(this.camera.quaternion);

@@ -24,6 +24,8 @@ export class Hud {
   private fps = el<HTMLDivElement>('fps');
   private flashEl = el<HTMLDivElement>('flash');
   private fadeEl = el<HTMLDivElement>('fade');
+  private hazeEl = el<HTMLDivElement>('haze');
+  private entryGlowEl = el<HTMLDivElement>('entry-glow');
   private pauseBadge = el<HTMLDivElement>('pause-badge');
   private startScreen = el<HTMLDivElement>('start-screen');
   private endScreen = el<HTMLDivElement>('end-screen');
@@ -95,6 +97,14 @@ export class Hud {
 
   setFade(opacity: number): void {
     this.fadeEl.style.opacity = String(opacity);
+  }
+
+  setHaze(opacity: number): void {
+    this.hazeEl.style.opacity = String(opacity);
+  }
+
+  setEntryGlow(opacity: number): void {
+    this.entryGlowEl.style.opacity = String(opacity);
   }
 
   setPaused(paused: boolean): void {

@@ -1,7 +1,8 @@
 // ツアー定義(データ駆動)。将来はJSON外部化してシーンモジュール組み合わせ(FR-05)に発展させる。
 
-export type WorldId = 'A' | 'B';
-export type BiasTarget = 'earth' | 'moon' | 'mars' | null;
+export type WorldId = 'A' | 'B' | 'C';
+export type RailKey = 'A' | 'B1' | 'C' | 'B2';
+export type BiasTarget = 'earth' | 'moon' | 'mars' | 'canyonExit' | null;
 
 export interface Phase {
   id: string;
@@ -13,9 +14,12 @@ export interface Phase {
 }
 
 // 総尺(秒)
-export const TOUR_LENGTH = 98;
+export const TOUR_LENGTH = 150;
 // ワープ中に世界を差し替える時刻(FR-46: ロードを見せない遷移)
 export const WORLD_SWAP_T = 60;
+// 大気圏突入/離脱で地表世界と切り替える時刻(FR-47: ヘイズのピークで差し替え)
+export const SURFACE_IN_T = 88;
+export const SURFACE_OUT_T = 126;
 
 export const PHASES: Phase[] = [
   { id: 'boarding', label: '出発', start: 0, end: 8, bias: 'earth', biasW: 0.5 },
@@ -23,8 +27,12 @@ export const PHASES: Phase[] = [
   { id: 'moon', label: '月フライバイ', start: 34, end: 48, bias: 'moon', biasW: 0.45 },
   { id: 'charge', label: 'ワープチャージ', start: 48, end: 56, bias: null, biasW: 0 },
   { id: 'warp', label: 'ワープ航行', start: 56, end: 64, bias: null, biasW: 0 },
-  { id: 'mars', label: '火星遊覧', start: 64, end: 88, bias: 'mars', biasW: 0.35 },
-  { id: 'arrival', label: '帰投減速', start: 88, end: TOUR_LENGTH, bias: 'mars', biasW: 0.12 },
+  { id: 'approach', label: '火星接近', start: 64, end: 82, bias: 'mars', biasW: 0.35 },
+  { id: 'entry', label: '大気圏突入', start: 82, end: SURFACE_IN_T, bias: 'mars', biasW: 0.55 },
+  { id: 'surface', label: '峡谷飛行', start: SURFACE_IN_T, end: 118.5, bias: null, biasW: 0 },
+  { id: 'ascent', label: '上昇', start: 118.5, end: SURFACE_OUT_T, bias: 'canyonExit', biasW: 0.35 },
+  { id: 'departure', label: '軌道離脱', start: SURFACE_OUT_T, end: 140, bias: 'mars', biasW: 0.45 },
+  { id: 'arrival', label: '帰投減速', start: 140, end: TOUR_LENGTH, bias: 'mars', biasW: 0.25 },
 ];
 
 export function phaseAt(t: number): Phase {
@@ -32,6 +40,14 @@ export function phaseAt(t: number): Phase {
     if (t < p.end) return p;
   }
   return PHASES[PHASES.length - 1];
+}
+
+// 時刻→ アクティブな世界とレール
+export function segmentAt(t: number): { world: WorldId; rail: RailKey } {
+  if (t < WORLD_SWAP_T) return { world: 'A', rail: 'A' };
+  if (t < SURFACE_IN_T) return { world: 'B', rail: 'B1' };
+  if (t < SURFACE_OUT_T) return { world: 'C', rail: 'C' };
+  return { world: 'B', rail: 'B2' };
 }
 
 export interface Subtitle {
@@ -50,10 +66,18 @@ export const SUBTITLES: Subtitle[] = [
   { t: 49, dur: 4, text: 'ワープ航行の準備に入ります。シートベルトをご確認ください。' },
   { t: 53.2, dur: 2.6, text: 'ワープまで、3… 2… 1…' },
   { t: 57, dur: 5, text: 'ワープ航行中。火星まで、およそ8秒の旅です。' },
-  { t: 65, dur: 5, text: 'ワープ完了。赤い惑星——火星です。' },
-  { t: 72, dur: 7, text: '眼下はマリネリス峡谷。深さはグランドキャニオンの約4倍あります。' },
-  { t: 81, dur: 6, text: '火星では、夕日が青く見えるのだそうです。' },
-  { t: 89.5, dur: 6.5, text: '本日のツアーはここまで。またのご搭乗をお待ちしております。' },
+  { t: 65, dur: 5.5, text: 'ワープ完了。赤い惑星——火星です。' },
+  { t: 72, dur: 5.5, text: 'これより大気圏に突入し、地表へ降下します。' },
+  { t: 78.5, dur: 5, text: '機体が少し揺れます。摩擦光は正常な現象です。ご安心ください。' },
+  { t: 84.5, dur: 3.5, text: '突入開始。高度、120km——' },
+  { t: 90.5, dur: 4, text: '——ようこそ、火星の空へ。' },
+  { t: 95.5, dur: 6.5, text: '眼下に広がるのはマリネリス峡谷。深さはグランドキャニオンの約4倍。' },
+  { t: 103.5, dur: 6, text: '峡谷の壁の縞模様は、数十億年分の地層です。' },
+  { t: 111, dur: 6, text: '風は強くても大気が薄いので、そよ風のようにしか感じないそうです。' },
+  { t: 118.5, dur: 4.5, text: '前方、峡谷の出口です。上昇します——' },
+  { t: 124, dur: 3.5, text: '砂塵の層を抜けて、宇宙へ。' },
+  { t: 129.5, dur: 5.5, text: '火星を離れます。窓から最後の眺めをどうぞ。' },
+  { t: 141, dur: 6.5, text: '本日のツアーはここまで。またのご搭乗をお待ちしております。' },
 ];
 
 // レール定義: 制御点(Catmull-Rom)と 時刻→弧長パラメータu のキーフレーム
@@ -87,23 +111,51 @@ export const RAIL_A: RailDef = {
   ],
 };
 
-// 世界B: 火星(原点, r=34)
-export const RAIL_B: RailDef = {
+// 世界B(往路): 火星(原点, r=34)へ接近し、大気圏へダイブする
+export const RAIL_B1: RailDef = {
   points: [
     [-260, 64, 190],
     [-160, 44, 128],
     [-70, 30, 84],
-    [8, 13, 44],
-    [80, 15, -8],
-    [165, 36, -84],
-    [300, 86, -170],
+    [0, 20, 58],
+    [10, 10, 42],
+    [10, 5, 36.6],
   ],
   keyframes: [
     [WORLD_SWAP_T, 0],
-    [64, 0.08],
-    [76, 0.45],
-    [88, 0.82],
-    [94, 0.95],
+    [64, 0.07],
+    [74, 0.38],
+    [80, 0.62],
+    [84, 0.82],
+    [SURFACE_IN_T, 1.0],
+  ],
+};
+
+// 世界C(地表): 制御点は terrain.ts の buildSurfaceRailPoints() が生成する
+export const RAIL_C_KEYFRAMES: [number, number][] = [
+  [SURFACE_IN_T, 0],
+  [92, 0.09],
+  [104, 0.42],
+  [116, 0.72],
+  [122, 0.88],
+  [SURFACE_OUT_T, 1.0],
+];
+
+// 世界B(復路): 火星を離れ、減速しながら帰投する
+export const RAIL_B2: RailDef = {
+  points: [
+    [14, 7, 42],
+    [70, 26, 95],
+    [150, 58, 150],
+    [250, 105, 205],
+    [400, 165, 265],
+    [560, 230, 320],
+  ],
+  keyframes: [
+    [SURFACE_OUT_T, 0],
+    [131, 0.28],
+    [138, 0.62],
+    [144, 0.85],
     [TOUR_LENGTH, 1.0],
   ],
 };
