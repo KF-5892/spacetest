@@ -8,8 +8,22 @@ function el<T extends HTMLElement>(id: string): T {
 
 export interface HudCallbacks {
   onStart(): void;
+  onFree(): void;
   onReplay(): void;
+  onReturnMenu(): void;
   onComfortChange(enabled: boolean): void;
+  onApproach(index: number): void;
+  bodyNames: string[];
+}
+
+export interface FreeHud {
+  speedText: string;
+  speedUnit: string;
+  targetName: string;
+  targetDist: string;
+  boosting: boolean;
+  approaching: string | null;
+  prompt: string | null;
 }
 
 export class Hud {
@@ -32,6 +46,13 @@ export class Hud {
   private hint = el<HTMLDivElement>('hint');
   private routeNodes = [el<HTMLSpanElement>('route-earth'), el<HTMLSpanElement>('route-moon'), el<HTMLSpanElement>('route-mars')];
 
+  // フリーフライトHUD
+  private freeTargetName = el<HTMLDivElement>('free-target-name');
+  private freeTargetDist = el<HTMLDivElement>('free-target-dist');
+  private freePrompt = el<HTMLDivElement>('free-prompt');
+  private markerLayer = el<HTMLDivElement>('marker-layer');
+  private markers: HTMLButtonElement[] = [];
+
   private lastSubtitle = '';
   private frames = 0;
   private fpsTimer = 0;
@@ -39,7 +60,12 @@ export class Hud {
 
   constructor(cb: HudCallbacks) {
     el<HTMLButtonElement>('start-btn').addEventListener('click', () => cb.onStart());
+    el<HTMLButtonElement>('free-btn').addEventListener('click', () => cb.onFree());
     el<HTMLButtonElement>('replay-btn').addEventListener('click', () => cb.onReplay());
+    el<HTMLButtonElement>('menu-btn').addEventListener('click', () => cb.onReturnMenu());
+    el<HTMLButtonElement>('free-exit').addEventListener('click', () => cb.onReturnMenu());
+    el<HTMLDivElement>('reticle'); // 存在確認(表示は body.free-mode のCSSで制御)
+    el<HTMLDivElement>('free-info');
     const comfort = el<HTMLInputElement>('comfort-check');
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       comfort.checked = true;
@@ -48,6 +74,68 @@ export class Hud {
     comfort.addEventListener('change', () => cb.onComfortChange(comfort.checked));
     // 操作ヒントはしばらくしたら控えめに
     window.setTimeout(() => this.hint.classList.add('dim'), 14000);
+
+    // 惑星マーカー(クリックで自動接近: FR-21)を名前の数だけ生成
+    cb.bodyNames.forEach((name, i) => {
+      const m = document.createElement('button');
+      m.className = 'marker';
+      m.innerHTML = `<span class="marker-dot"></span><span class="marker-label">${name}</span><span class="marker-dist"></span>`;
+      m.style.display = 'none';
+      m.addEventListener('click', (e) => { e.stopPropagation(); cb.onApproach(i); });
+      this.markerLayer.appendChild(m);
+      this.markers.push(m);
+    });
+  }
+
+  // ---- フリーフライト ----
+  // 表示は body.free-mode のCSSで切り替える(個別トグルより堅牢)
+  setFreeMode(on: boolean): void {
+    document.body.classList.toggle('free-mode', on);
+    if (!on) {
+      this.hideMarkers();
+      this.freePrompt.classList.add('hidden');
+    }
+  }
+
+  setFreeHud(f: FreeHud | null): void {
+    if (!f) {
+      this.freePrompt.classList.add('hidden');
+      return;
+    }
+    this.speed.textContent = f.speedText;
+    this.speedUnit.textContent = f.speedUnit;
+    this.speed.classList.toggle('warp', f.boosting);
+    this.freeTargetName.textContent = f.approaching ? `▶ ${f.approaching} へ接近中` : f.targetName;
+    this.freeTargetName.classList.toggle('approaching', !!f.approaching);
+    this.freeTargetDist.textContent = f.targetDist;
+    if (f.prompt) {
+      this.freePrompt.textContent = f.prompt;
+      this.freePrompt.classList.remove('hidden');
+    } else {
+      this.freePrompt.classList.add('hidden');
+    }
+  }
+
+  setStatusText(txt: string): void {
+    this.status.textContent = txt;
+    this.status.dataset.mode = txt === 'BOOST' || txt === 'AUTO' ? 'warp' : 'cruise';
+    this.warpFill.style.width = txt === 'BOOST' ? '100%' : txt === 'AUTO' ? '60%' : '0%';
+  }
+
+  setMarker(i: number, visible: boolean, x: number, y: number, name: string, dist: string, selected: boolean): void {
+    const m = this.markers[i];
+    if (!m) return;
+    if (!visible) { m.style.display = 'none'; return; }
+    m.style.display = 'flex';
+    m.style.left = `${x}px`;
+    m.style.top = `${y}px`;
+    m.classList.toggle('selected', selected);
+    (m.querySelector('.marker-label') as HTMLElement).textContent = name;
+    (m.querySelector('.marker-dist') as HTMLElement).textContent = dist;
+  }
+
+  hideMarkers(): void {
+    for (const m of this.markers) m.style.display = 'none';
   }
 
   setSubtitle(text: string | null): void {
